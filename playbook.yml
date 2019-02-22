@@ -1,0 +1,52 @@
+# https://netslovers.com/2018/04/07/how-to-centos-mitmproxy-installation-and-configuration/
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Stop firewalld
+      service: 
+        name: firewalld
+        state: stopped
+
+    - name: install epel
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: install SCL
+      yum:
+        name: centos-release-scl
+        state: latest
+
+    - name: Install python3 tooling
+      package: 
+        name: "{{ item }}"
+        state: installed
+      with_items:
+        - rh-python36-python 
+        - rh-python36-python-devel 
+        - rh-python36-PyYAML
+        - gcc
+        - python-setuptools
+
+    - name: Configure python36
+      copy:
+        dest: /etc/profile.d/python36.sh
+        content: "pathmunge /opt/rh/rh-python36/root/usr/bin"
+
+    - name: install pip resources
+      pip:
+        name: pip
+        state: latest
+        executable: /opt/rh/rh-python36/root/usr/bin/pip3.6
+
+    - name: install pip resources
+      pip:
+        name: ['pyasn', 'mitmproxy']
+        executable: /opt/rh/rh-python36/root/usr/bin/pip3.6
+
+    - name: Start proxy
+      command: mitmproxy
+      async: 2592000               # 60*60*24*30 – 1 month
+      poll: 0
+
